@@ -1,41 +1,11 @@
-# Sử dụng PHP-FPM base image
-FROM php:8.1-fpm
+[phases.setup]
+nixPkgs = ["nodejs", "php81", "php81Packages.composer"]
 
-# Cài các extension & tool cần thiết
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    unzip \
-    zip \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
-    gnupg \
-    nodejs \
-    npm
+[phases.install]
+cmds = ["composer install --ignore-platform-reqs", "npm install"]
 
-# Cài Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+[phases.build]
+cmds = ["npm run prod"]
 
-# Tạo thư mục làm việc
-WORKDIR /var/www
-
-# Copy toàn bộ project vào container
-COPY . .
-
-# Cài đặt Laravel dependencies
-RUN composer install --ignore-platform-reqs --no-interaction --prefer-dist \
-    && npm install \
-    && npm run prod
-
-# Phân quyền cho thư mục storage
-RUN chmod -R 775 storage bootstrap/cache
-
-# Mở cổng 8000 cho Laravel
-EXPOSE 8000
-
-# Lệnh khởi động ứng dụng
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+[start]
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"

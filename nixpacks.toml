@@ -1,7 +1,6 @@
-# Sử dụng image có PHP và các extension cần thiết
 FROM php:8.1-fpm
 
-# Cài các tiện ích cần thiết, Node.js, npm, git...
+# Cài các thư viện hỗ trợ PHP + hệ thống
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -13,31 +12,32 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    gnupg \
     && docker-php-ext-install pdo pdo_mysql zip mbstring exif pcntl
-
-# Cài Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Cài Node.js 16 và npm
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs
 
+# Cài Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 # Tạo thư mục làm việc
 WORKDIR /var/www
 
-# Copy source vào container
+# Copy toàn bộ code vào container
 COPY . .
 
-# Cài đặt Composer & NPM
+# Cài Composer và npm + build assets
 RUN composer install --ignore-platform-reqs --no-interaction --prefer-dist \
     && npm install \
     && npm run prod
 
-# Chmod lại quyền thư mục
+# Cấp quyền thư mục
 RUN chmod -R 775 storage bootstrap/cache
 
-# Mở port 8000 cho Laravel
+# Mở port cho Laravel
 EXPOSE 8000
 
-# Chạy Laravel bằng PHP built-in server
+# Khởi động app
 CMD php artisan serve --host=0.0.0.0 --port=8000

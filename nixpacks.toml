@@ -1,17 +1,40 @@
-[phases.setup]
-nixPkgs = ["php81", "php81Packages.composer"]
+# Base image có hỗ trợ PHP, Composer
+FROM php:8.1-fpm
 
+# Cài các tiện ích cơ bản và Node.js
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    zip \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    nodejs \
+    npm
 
-[phases.setup]
-nixPkgs = ["nodejs", "php", "composer"]
+# Cài Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-[phases.build]
-cmds = [
-  "composer install --ignore-platform-reqs",
-  "npm install",
-  "npm run prod"
-]
+# Làm việc trong thư mục /var/www
+WORKDIR /var/www
 
-[start]
-cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+# Copy toàn bộ source code
+COPY . .
 
+# Cài đặt Composer + Node Modules
+RUN composer install --ignore-platform-reqs --no-interaction --prefer-dist \
+    && npm install \
+    && npm run prod
+
+# Set quyền truy cập cho thư mục lưu trữ
+RUN chown -R www-data:www-data /var/www/storage
+
+# Expose cổng 8000 (hoặc PORT do Railway cấp)
+EXPOSE 8000
+
+# CMD khởi chạy Laravel
+CMD php artisan serve --host=0.0.0.0 --port=8000

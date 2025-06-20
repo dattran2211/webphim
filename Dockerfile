@@ -24,7 +24,9 @@ COPY . .
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 # 8. Cài frontend (npm + build assets)
-RUN npm install && npm run build
+RUN npm install \
+ && npm install resolve-url-loader@^5.0.0 --save-dev --legacy-peer-deps \
+ && npm run build
 
 # 9. Set quyền cho storage + cache
 RUN chown -R www-data:www-data /var/www \
